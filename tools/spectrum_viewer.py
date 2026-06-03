@@ -127,22 +127,16 @@ class DeviceReader(threading.Thread):
 
         _try_init(device)
 
-        consecutive_empty = 0
+        last_keepalive = time.monotonic()
         while not self._stop.is_set():
+            # Send keep-alive every 3 s (device stops after ~4 s without it)
+            if time.monotonic() - last_keepalive >= 3.0:
+                _try_init(device)
+                last_keepalive = time.monotonic()
+
             text = device.read_text_packet(timeout_ms=200)
             if not text:
-                consecutive_empty += 1
-                if consecutive_empty > 30:
-                    # device stopped streaming — try re-init
-                    _try_init(device)
-                    consecutive_empty = 0
-                    with self._lock:
-                        self.waiting_for_device = True
                 continue
-
-            consecutive_empty = 0
-            with self._lock:
-                self.waiting_for_device = False
 
             try:
                 pkt = parse_packet(text)
