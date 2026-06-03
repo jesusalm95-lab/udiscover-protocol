@@ -44,7 +44,7 @@ def main() -> None:
 
     count = 0
     try:
-        device.connect()
+        device.connect()   # sends init commands automatically
         print("Connected. Press Ctrl+C to stop.\n")
 
         while running:

@@ -35,7 +35,7 @@ class UDiscoverDevice:
     # ------------------------------------------------------------------
 
     def connect(self) -> None:
-        """Open the HID device. Raises RuntimeError if not found."""
+        """Open the HID device and send initialization commands."""
         try:
             import hid  # type: ignore[import]
         except ImportError as exc:
@@ -52,13 +52,48 @@ class UDiscoverDevice:
                 "Is the device connected and not claimed by another process?"
             ) from exc
 
-        device.set_nonblocking(0)  # blocking reads
+        device.set_nonblocking(0)
         self._device = device
-        log.info(
-            "Connected to U.Discover VID=%s PID=%s",
-            hex(self.vid),
-            hex(self.pid),
-        )
+        log.info("Connected to U.Discover VID=%s PID=%s", hex(self.vid), hex(self.pid))
+
+        # [CONFIRMED] Initialization sequence captured via USBPcap.
+        # The official software sends these two commands on open, then repeats
+        # them every ~4 seconds as keep-alive. Without them the device is silent.
+        self._send_init()
+
+    # ------------------------------------------------------------------
+    # Initialization / keep-alive
+    # ------------------------------------------------------------------
+
+    # [CONFIRMED] Commands captured from official U.Discover v1.1.0 via USBPcap.
+    # Sent on open and repeated every ~4 s as keep-alive.
+    _CMD_Y = b"%Y,01,F107#"   # start/keep-alive command A
+    _CMD_Z25 = b"%Z,25,F1E0#"  # start/keep-alive command B  (block 0x25 = control)
+    _KEEPALIVE_INTERVAL = 4.0  # seconds between keep-alive pairs
+
+    def _make_report(self, cmd: bytes) -> list[int]:
+        """Build a 64-byte HID output report from a text command."""
+        payload = list(cmd) + [0] * (63 - len(cmd))
+        return [0x00] + payload  # prepend report ID 0x00 (required by Windows HID)
+
+    def _send_init(self) -> None:
+        """Send the initialization command pair to start scanning."""
+        if self._device is None:
+            return
+        try:
+            self._device.write(self._make_report(self._CMD_Y))
+            self._device.write(self._make_report(self._CMD_Z25))
+            log.debug("Init commands sent")
+        except Exception as exc:
+            log.warning("Init write failed: %s", exc)
+
+    def send_keepalive(self) -> None:
+        """
+        Send the keep-alive command pair.
+        Must be called every ~4 seconds or the device will stop streaming.
+        Call this from your read loop.
+        """
+        self._send_init()
 
     def disconnect(self) -> None:
         """Close the HID device if open."""

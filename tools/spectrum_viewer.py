@@ -94,29 +94,10 @@ def decode_frame(frame) -> tuple[np.ndarray, np.ndarray] | None:
     return np.array(freqs, dtype=np.float32), np.array(levels, dtype=np.float32)
 
 
-# ── HID initialization ────────────────────────────────────────────────────────
-
-# Known init sequence sent by U.Discover v1.1.0 (captured via USB monitoring).
-# Sending this allows standalone operation without the official software.
-# Status: under investigation — see tools/init_probe.py
-_INIT_SEQUENCES: list[list[int]] = [
-    [0x00, 0x01],
-    [0x00, 0x02],
-    [0x00, 0xAA],
-    [0x00, 0xA5],
-]
-
-
 def _try_init(device) -> None:
-    """
-    Attempt to send known initialization bytes to the device.
-    If none work, the official software must be open to start the scan.
-    """
-    import hid as hid_module
+    """Send confirmed init/keep-alive commands to the device."""
     try:
-        for seq in _INIT_SEQUENCES:
-            device._device.write(seq)
-            time.sleep(0.05)
+        device.send_keepalive()
     except Exception:
         pass
 
