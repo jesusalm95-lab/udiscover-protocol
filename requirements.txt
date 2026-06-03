@@ -1,6 +1,8 @@
 hidapi>=0.14.0
+pyqtgraph>=0.13.0
+PyQt6>=6.4.0
+numpy>=1.26.0
 
-# Optional — install only if needed for analysis
-# numpy>=1.26.0
+# Optional — only needed for analyze_frames.py CSV export
 # pandas>=2.2.0
 # matplotlib>=3.8.0
