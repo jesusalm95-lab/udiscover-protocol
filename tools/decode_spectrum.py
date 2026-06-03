@@ -32,9 +32,11 @@ FREQ_REG_END   = 43674    # = 0xAA9A, maps to END_MHZ
 START_MHZ      = 500.0    # confirmed from block 00 header (0x30D4 = 12500 × 40 kHz)
 END_MHZ        = 699.0    # observed from CSV export of official software
 
-# [ESTIMATED] Level calibration — needs simultaneous HID+CSV capture to confirm
-LEVEL_MIN_DBM  = -102.0   # level_byte = 0   → noise floor
-LEVEL_MAX_DBM  = -62.0    # level_byte = 255 → strongest observed signal
+# Level calibration — level_byte 221 = -63 dBm (confirmed vs official software),
+# level_byte 0 ≈ -80 dBm (noise floor visible in official software).
+# Formula: level_dBm = -80 + (level_byte / 255) * 20
+LEVEL_MIN_DBM  = -80.0    # noise floor  (level_byte = 0)
+LEVEL_MAX_DBM  = -60.0    # saturation   (level_byte = 255)
 
 
 def freq_reg_to_mhz(reg: int) -> float:

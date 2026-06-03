@@ -39,8 +39,14 @@ FREQ_REG_START = 31275
 FREQ_REG_END   = 43674
 START_MHZ      = 500.0
 END_MHZ        = 699.0
-LEVEL_MIN_DBM  = -102.0
-LEVEL_MAX_DBM  = -62.0
+
+# Level calibration — derived from simultaneous HID+official-software comparison:
+#   level_byte = 221  →  -63 dBm  (confirmed: 597 MHz peak matches official CSV)
+#   level_byte = 0    →  -80 dBm  (noise floor observed in official software)
+# Formula: level_dBm = -80 + (level_byte / 255) * 20
+LEVEL_BYTE_SCALE = 255.0
+LEVEL_MIN_DBM    = -80.0   # noise floor
+LEVEL_MAX_DBM    = -60.0   # saturation / strongest expected signal
 
 # ── Palette ───────────────────────────────────────────────────────────────────
 C_LIVE   = (0,   210,  90)
@@ -191,7 +197,7 @@ class SpectrumViewer(QMainWindow):
         self.pw.setLabel("left",   "Level",     units="dBm", color=C_TEXT)
         self.pw.setLabel("bottom", "Frequency", units="MHz", color=C_TEXT)
         self.pw.setXRange(START_MHZ, END_MHZ, padding=0.02)
-        self.pw.setYRange(LEVEL_MIN_DBM - 8, LEVEL_MAX_DBM + 8, padding=0)
+        self.pw.setYRange(LEVEL_MIN_DBM - 5, LEVEL_MAX_DBM + 5, padding=0)
         self.pw.showGrid(x=True, y=True, alpha=0.25)
         self.pw.getAxis("left").setTickSpacing(major=10, minor=5)
         self.pw.setMouseEnabled(x=True, y=True)    # allow zoom/pan
