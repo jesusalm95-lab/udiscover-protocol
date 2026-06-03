@@ -1,0 +1,6 @@
+hidapi>=0.14.0
+
+# Optional — install only if needed for analysis
+# numpy>=1.26.0
+# pandas>=2.2.0
+# matplotlib>=3.8.0
