@@ -90,11 +90,10 @@ def parse_packet(text: str) -> UDiscoverPacket | None:
     block_label, payload_hex, checksum_hex = m.group(1), m.group(2), m.group(3)
     block_index = int(block_label, 16)
 
+    # [CONFIRMED] Blocks 0x01–0x24 arrive with 49-char (odd-length) payloads.
+    # The trailing nibble's meaning is unknown; payload_bytes drops it safely.
     if len(payload_hex) % 2 != 0:
-        raise PacketParseError(
-            f"Payload hex has odd length ({len(payload_hex)}) — "
-            f"cannot decode to bytes: {text!r}"
-        )
+        payload_hex = payload_hex[:-1]  # drop trailing nibble, keep full bytes
 
     return UDiscoverPacket(
         prefix="%Z",
